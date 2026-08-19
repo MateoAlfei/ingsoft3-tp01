@@ -1,10 +1,23 @@
 import { useEffect, useState } from "react";
 import { dashboardApi } from "../api/client";
 import type { DashboardSummary } from "../api/types";
+import { PieChart } from "../components/PieChart";
 
 const MONTH_NAMES = [
   "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
   "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+];
+
+// Paleta categórica: hues en orden fijo, nunca ciclados ni reasignados por valor.
+const CATEGORICAL_PALETTE = [
+  "#2a78d6", // blue
+  "#eb6834", // orange
+  "#1baf7a", // aqua
+  "#eda100", // yellow
+  "#e87ba4", // magenta
+  "#008300", // green
+  "#4a3aa7", // violet
+  "#e34948", // red
 ];
 
 export function DashboardPage() {
@@ -31,7 +44,22 @@ export function DashboardPage() {
       {summary.categories.length === 0 ? (
         <p>Todavía no hay categorías cargadas.</p>
       ) : (
-        <div className="cards-grid">
+        <>
+          {summary.totalSpent > 0 && (
+            <PieChart
+              data={summary.categories
+                .filter((c) => c.spent > 0)
+                .map((c, i) => ({
+                  label: c.categoryName,
+                  value: c.spent,
+                  color: CATEGORICAL_PALETTE[i % CATEGORICAL_PALETTE.length],
+                }))}
+              centerValue={`$${summary.totalSpent.toFixed(0)}`}
+              centerLabel="gastado"
+            />
+          )}
+
+          <div className="cards-grid">
           {summary.categories.map((c) => {
             const pct = c.monthlyBudget ? Math.min(100, (c.spent / c.monthlyBudget) * 100) : null;
             return (
@@ -54,7 +82,8 @@ export function DashboardPage() {
               </div>
             );
           })}
-        </div>
+          </div>
+        </>
       )}
     </div>
   );
