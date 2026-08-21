@@ -45,3 +45,85 @@ GitHub antes de avanzar al paso siguiente — no copié nada sin ver que funcion
 de flujo de trabajo (branching, squash and merge, protección de rama) las definió la cátedra en
 la guía; usé la IA como apoyo para ejecutar los pasos correctamente y entender los conceptos, no
 para tomar esas decisiones, por lo que puedo explicarlas en la defensa oral sin depender de ella.
+
+
+---
+
+## TP2 — Contenedores
+
+### 1. Elección de la app del semestre
+
+Elegí **AppGastos**, mi propio proyecto (backend .NET 8 + frontend React/TypeScript + PostgreSQL),
+contra los criterios de la guía:
+
+- **¿Buildea y corre localmente sin magia?** Sí — ya lo tenía corriendo nativo antes de empezar
+  este TP (backend en `dotnet run`, base en contenedor Postgres suelto).
+- **¿Tiene o puedo escribirle tests?** Todavía no tiene tests, pero la estructura (EF Core con
+  DbContext separado, minimal API) permite agregarlos sin refactor grande — lo dejo para el TP5.
+- **¿Entiendo el código lo suficiente como para modificarlo?** Sí
+- **Tamaño**: cumple con CRUD + pocas pantallas (usuarios, categorías, gastos, dashboard) — no se
+  pasa de lo que pide la guía.
+
+### 2. Decisiones de contenerización
+
+- **Imágenes base**: `mcr.microsoft.com/dotnet/sdk:8.0` / `aspnet:8.0` para el backend (coincide
+  con el `TargetFramework net8.0` fijado también por `global.json`); `node:22-alpine` para buildear
+  el frontend y `nginx:alpine` para servirlo — mismas imágenes que usé en la práctica sobre el
+  sample de la cátedra.
+- **Estructura multi-stage**: en ambos Dockerfiles, una etapa de build (SDK/Node) y una etapa final
+  liviana (runtime/nginx) que solo copia los artefactos ya compilados. Resultado: imagen final del
+  backend de **335MB** contra los **1.2GB** de la imagen del SDK.
+- **Qué persiste y qué no**: los datos de PostgreSQL viven en un volumen nombrado (`db_data`),
+  declarado en `docker-compose.yml`. Sobreviven a `docker compose down`, se destruyen con `down -v`
+  (verificado en `evidencias.md`). El resto del sistema (backend, frontend) es efímero por diseño:
+  se puede recrear en cualquier momento sin pérdida de información.
+- **Migraciones automáticas**: el backend aplica `db.Database.Migrate()` al arrancar, así que la
+  base nace vacía en el contenedor y las tablas (`Users`, `Categories`, `Expenses`) se crean solas
+  la primera vez que el backend levanta contra una base nueva — no hace falta correr nada a mano.
+- **Frontend con proxy en nginx**: el frontend llama a `/api/...` con rutas relativas (`BASE_URL =
+  "/api"` en `client.ts`), así que en el contenedor `nginx.conf` reenvía ese prefijo al servicio
+  `backend` de la red de compose. Mismo enfoque que recomienda la guía en §2.6(a): sin CORS, misma
+  imagen sirve en cualquier entorno.
+- **Arquitectura de las imágenes publicadas**: construidas en Windows con Docker Desktop, resultan
+  en `linux/amd64` (confirmado con `docker version`) — compatibles con los runners de GitHub
+  Actions que se van a usar en el TP7.
+
+### 3. Problemas encontrados y cómo los resolví
+
+- **`host.docker.internal` resuelve por IPv6 en Docker Desktop para Windows**: al correr el backend
+  en contenedor suelto contra una base en el host, la conexión fallaba primero con
+  `Network is unreachable` (intentaba conectar a una IP IPv6) y después con `Connection refused`
+  incluso usando `--add-host=host.docker.internal:host-gateway`. Lo resolví evitando el problema de
+  raíz: conecté el contenedor del backend a una red Docker compartida con el contenedor de la base
+  (`docker network create` + `docker network connect`), y usé el nombre del contenedor de la base
+  como host en la connection string, en vez de pasar por el host de Windows. Este es exactamente el
+  mismo mecanismo que después uso en `docker-compose.yml` (red interna con DNS por nombre de
+  servicio), así que el problema terminó siendo una buena introducción al concepto de §2.6.
+
+- **Puerto 8080 en conflicto con mi propio backend nativo**: al intentar levantar el backend en
+  contenedor, chocaba con `AppGastos.Api` corriendo nativamente en mi máquina en el mismo puerto.
+  Lo identifiqué con `Get-NetTCPConnection -LocalPort 8080` + `Get-Process`, y lo resolví frenando
+  el proceso nativo antes de correr el contenedor.
+
+- **Error transitorio al publicar la imagen del backend en ghcr**: el primer `docker push` del
+  backend falló con `error from registry: unknown` después de montar varias capas ya existentes de
+  otra imagen mía. Reintenté el mismo comando y esta vez completó sin problema (`Layer already
+  exists` para todas las capas) — quedó documentado como un fallo transitorio del registry, no de
+  mi configuración.
+
+### 4. Declaración de uso de IA
+
+Usé Claude (Anthropic) como asistente durante todo el desarrollo del TP, tanto en la práctica sobre
+el sample de la cátedra como en la aplicación real sobre AppGastos, principalmente para:
+- Entender el porqué de cada instrucción de los Dockerfiles (multi-stage, orden de capas, por qué
+  el SDK no viaja a producción) y de las claves de `docker-compose.yml` (healthcheck, depends_on,
+  volúmenes nombrados vs. bind mounts).
+- Diagnosticar y resolver los errores reales que fueron apareciendo (IPv6 de
+  `host.docker.internal`, puertos ocupados, `.env` mal armado, error transitorio de push).
+- Adaptar los archivos de la guía (pensados para el sample `demo-fullstack`) a la estructura real
+  de mi proyecto (proyecto único en vez de solución multi-proyecto, connection string con nombre
+  `appgastos`, migraciones EF en vez de `EnsureCreated`, endpoint `/api/health` en vez de `/health`).
+- Estructurar este archivo y `evidencias.md`.
+
+Verifiqué cada paso ejecutándolo yo mismo en mi terminal y confirmando el resultado (build exitoso,
+`curl` respondiendo, interfaz cargando, persistencia de datos) antes de avanzar al siguiente.
