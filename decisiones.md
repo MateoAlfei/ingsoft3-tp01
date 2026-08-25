@@ -127,3 +127,71 @@ el sample de la cátedra como en la aplicación real sobre AppGastos, principalm
 
 Verifiqué cada paso ejecutándolo yo mismo en mi terminal y confirmando el resultado (build exitoso,
 `curl` respondiendo, interfaz cargando, persistencia de datos) antes de avanzar al siguiente.
+
+
+---
+
+## TP3 — Planificación y trazabilidad
+
+### 1. Duración del sprint
+
+Elegí un sprint de **1 semana**. La razón principal es alinear el ritmo de planificación con
+el ritmo real de avance de la materia: al trabajar solo (sin necesidad de sincronizar con un
+equipo), un sprint más corto me permite revisar mi propio progreso con más frecuencia y
+reajustar el plan si algo no sale como esperaba, en vez de esperar semanas para darme cuenta de
+un desvío. Descarté sprints más largos (2-3 semanas) porque, para trabajo individual, alargan
+innecesariamente el ciclo de feedback sin aportar ningún beneficio de coordinación (que sí
+tendría sentido en un equipo grande).
+
+### 2. Límite de trabajo en progreso
+
+Configuré el límite en **2** para la columna *In Progress*. Sigo la regla de arranque que
+sugiere la guía: personas trabajando + 1. Trabajando solo, eso da 1 + 1 = 2. El "+1" funciona
+como válvula: si algo queda esperando (por ejemplo, una revisión propia pendiente o un bloqueo
+externo), puedo avanzar en otra cosa sin quedarme completamente detenido, pero sin caer en la
+tentación de abrir tres o cuatro frentes en paralelo — que es exactamente lo que el límite
+busca evitar (trabajo empezado y no terminado, que es inventario, no avance real).
+
+### 3. Diagnóstico de la historia mal escrita
+
+La historia de ejemplo — *"Como desarrollador quiero crear la tabla usuarios"* — está mal
+escrita por dos motivos relacionados. El más superficial es que le falta el "para", la parte
+que justifica el beneficio. Pero el problema de fondo es más importante: es una **tarea
+disfrazada de historia**, no una historia real. El beneficiario de "crear una tabla" no es un
+usuario de la aplicación — es el propio desarrollador o el sistema; ningún usuario final
+percibe ni le importa que exista una tabla llamada `usuarios` en la base de datos, es un
+detalle interno de implementación. La reescribiría subiendo un nivel de abstracción a la
+necesidad real del usuario, por ejemplo: *"Como usuario quiero registrarme con mi email y
+contraseña para tener mi propia cuenta en la app"* — ahí sí hay alguien que se beneficia de
+forma observable. "Crear la tabla usuarios" pasaría a ser una de las tareas técnicas
+necesarias para cumplir esa historia, no la historia en sí.
+
+### 4. Problemas encontrados y cómo los resolví
+
+No encontré complicaciones técnicas relevantes durante este TP — el flujo de crear issues,
+vincular sub-issues, configurar el board, el sprint y el límite de trabajo en progreso, y cerrar
+una tarea automáticamente desde un Pull Request, funcionó siguiendo los pasos de la guía sin
+inconvenientes. Verifiqué cada checkpoint manualmente antes de avanzar al siguiente (proyecto
+público en ventana de incógnito, jerarquía navegable en la épica y la historia, tarea cerrada
+automáticamente y movida a Done en el tablero).
+
+### 5. Declaración de uso de IA
+
+Usé Claude (Anthropic) como asistente durante todo el desarrollo del TP, principalmente para:
+- Entender la diferencia entre épica, historia y tarea, y por qué la jerarquía de tres niveles
+  existe (qué pregunta responde cada nivel).
+- Diagnosticar la historia mal escrita del §3.2 — a partir de la pista de "quién es el
+  beneficiario", llegué yo mismo a la conclusión de que era una tarea disfrazada de historia,
+  y la IA confirmó y completó el razonamiento.
+- Guiarme paso a paso por la interfaz de GitHub Projects (crear el proyecto, hacerlo público,
+  crear sub-issues, configurar el campo Iteration, el workflow automático, el límite de
+  trabajo en progreso) ya que era mi primera vez usando esta herramienta.
+- Explicar por qué el `Closes #N` tiene que ir en la descripción del PR (y no en un comentario
+  posterior) y por qué referencia a la tarea y no a la historia.
+
+Verifiqué cada paso ejecutándolo yo mismo en la web de GitHub y confirmando el resultado
+(proyecto público accesible sin sesión, jerarquía visible con sub-issues, tarjetas en el
+tablero, tarea cerrada automáticamente tras el merge del PR) antes de avanzar al siguiente. Las
+decisiones de duración de sprint y límite de trabajo en progreso las razoné y elegí yo mismo
+con apoyo de la IA para entender las implicancias de cada opción — puedo explicarlas en la
+defensa oral sin depender de ella.
