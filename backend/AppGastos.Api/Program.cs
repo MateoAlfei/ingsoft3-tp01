@@ -66,3 +66,5 @@ app.MapExpenseEndpoints();
 app.MapDashboardEndpoints();
 
 app.Run();
+// TODO: revisar validaciones de categorías
+using NoExiste;
