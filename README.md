@@ -1,5 +1,7 @@
 # AppGastos
 
+[![CI](https://github.com/MateoAlfei/ingsoft3-tp01/actions/workflows/ci.yml/badge.svg)](https://github.com/MateoAlfei/ingsoft3-tp01/actions/workflows/ci.yml)
+
 Aplicación de gestión de gastos personales — backend en .NET 8, frontend en React + TypeScript + Vite, base de datos PostgreSQL. Contenerizada con Docker.
 
 ## Instalación
