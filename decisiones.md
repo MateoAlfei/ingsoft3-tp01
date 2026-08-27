@@ -195,3 +195,88 @@ tablero, tarea cerrada automáticamente tras el merge del PR) antes de avanzar a
 decisiones de duración de sprint y límite de trabajo en progreso las razoné y elegí yo mismo
 con apoyo de la IA para entender las implicancias de cada opción — puedo explicarlas en la
 defensa oral sin depender de ella.
+
+---
+
+## TP4 — CI: Pipelines as Code
+
+### 1. Estructura elegida del pipeline
+
+El workflow tiene **dos jobs en paralelo**, uild-backend y uild-frontend, porque AppGastos
+tiene dos Dockerfiles separados (uno por carpeta, como quedó armado en el TP2). Cada job corre en
+su propia máquina limpia (`ubuntu-latest`) y construye su imagen de forma independiente con
+`docker/build-push-action`, usando el mismo Dockerfile que ya se usa para desplegar — no hay una
+definición de build paralela ni distinta.
+
+Elegí paralelizar en vez de un solo job secuencial porque no hay ninguna dependencia real entre
+construir el backend y construir el frontend: son artefactos independientes, así que no tiene
+sentido esperar a que uno termine para empezar el otro. Correrlos en paralelo reduce el tiempo
+total de la corrida sin ningún costo — cada job usa su propia máquina, así que no compiten por
+recursos entre sí.
+
+Los dos triggers configurados son `pull_request` (hacia main) y `push` (a main). El primero es
+el que realmente importa: corre **antes** de que el cambio se integre, sobre el resultado
+propuesto del merge, y es el que alimenta el gate (§3.3). El segundo asegura que main tenga su
+propia corrida — necesaria para que el badge del README lea un estado real, y para que la corrida
+de main deje el cache disponible para que los PRs futuros lo aprovechen desde su primera corrida.
+
+### 2. Qué cachea el pipeline
+
+El pipeline cachea las **capas de las imágenes Docker**, usando `type=gha` (el almacén de cache de
+GitHub Actions) con `mode=max` para guardar también las capas intermedias, no solo las de la imagen
+final. Cada job tiene su propio `scope` (`backend` / `frontend`) para que no se pisen entre sí — sin
+esto, el último job en terminar borraría el cache que dejó el otro.
+
+Verifiqué el funcionamiento con dos corridas seguidas sobre el mismo PR: la primera construyó todo
+desde cero (0% de cache reutilizado, según el resumen de build de GitHub), y la segunda reutilizó
+un **44%** de las capas en ambos jobs — específicamente las que no dependen de archivos que cambié
+entre una corrida y la otra (por ejemplo, la capa de `dotnet restore`, que solo se invalida si
+cambia el .csproj).
+
+Si el cache desaparece (la plataforma lo puede desalojar en cualquier momento, o tiene límite de
+tamaño), el pipeline **no falla**: simplemente reconstruye todo desde cero, más lento, exactamente
+igual que la primera corrida que hicimos. El cache es una optimización, nunca una dependencia — si
+mi pipeline fallara sin él, eso sería un bug escondido, no un comportamiento esperado.
+
+### 3. Por qué el pipeline construye con el Dockerfile en vez de compilar por su cuenta
+
+El pipeline no tiene ninguna línea de `dotnet` ni de `npm` — solo invoca `docker build` sobre la
+carpeta de cada servicio. La razón es evitar tener **dos definiciones de build** que puedan
+divergir con el tiempo: si el workflow compilara por su cuenta llamando directo a `dotnet publish`
+o `npm run build`, y por separado el Dockerfile hiciera lo mismo con pasos ligeramente distintos,
+podría pasar que el pipeline diga "compila" mientras la imagen real que se despliega falla, o
+viceversa. Usando el Dockerfile como única fuente de verdad, lo que el pipeline verifica es
+exactamente lo mismo que después se construye y se despliega — no hay margen para que ambas cosas
+se desincronicen.
+
+### 4. Problemas encontrados y cómo los resolví
+
+- **Trabajar sobre una rama ya mergeada por error**: al ir a agregar el badge del README, seguía
+  parado en la rama `feature/demo-gate`, que ya había sido mergeada a main en el paso anterior
+  (el de romper y arreglar el build). Como main tiene el gate activo, no tenía sentido seguir
+  agregando commits a una rama vieja para un cambio nuevo y sin relación. Lo resolví con
+  `git stash` (para no perder el cambio que ya tenía hecho en el README), `git checkout main` +
+  `git pull` (para partir de la versión actualizada), `git checkout -b docs/badge-readme` (rama
+  nueva y limpia), y `git stash pop` (para recuperar el cambio guardado sobre la rama correcta) —
+  sin perder ningún trabajo.
+
+### 5. Declaración de uso de IA
+
+Usé Claude (Anthropic) como asistente durante todo el desarrollo del TP, principalmente para:
+- Entender la diferencia entre `pull_request` y `push` como triggers, y por qué el primero es el
+  que realmente actúa como verificación (corre antes del merge, sobre el resultado propuesto).
+- Entender el mecanismo del cache de capas (`cache-from`/`cache-to`, `scope`, `mode=max`) y por
+  qué hace falta el paso de `setup-buildx-action` — el constructor de Docker que viene de fábrica
+  en el runner no sabe exportar capas al almacén externo de GitHub.
+- Guiarme paso a paso por la configuración del gate en Settings → Branches (dónde aparece el
+  buscador de status checks, por qué hay que correr el workflow al menos una vez antes de que
+  aparezcan como opciones para elegir).
+- Diagnosticar el problema de encoding que apareció al intentar romper el build con `echo >>`
+  desde PowerShell (generaba caracteres nulos inválidos en vez del error de compilación esperado),
+  y resolver el problema de la rama mergeada mencionado en el punto 4.
+
+Verifiqué cada paso ejecutándolo yo mismo: confirmé el build fallando en mi propia máquina antes
+de subirlo (`docker build ./backend`), vi los checks en rojo y el botón de merge bloqueado en el
+PR, y confirmé el merge habilitado recién después del fix. Puedo explicar en la defensa oral el
+porqué de cada decisión (paralelismo de jobs, scope del cache, strict: true, por qué el pipeline
+usa el Dockerfile) sin depender de la IA.
