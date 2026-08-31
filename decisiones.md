@@ -1,4 +1,4 @@
-# Decisiones — TP1
+## Decisiones — TP1
 
 ## 1. Por qué Git no pudo resolver el conflicto solo
 
