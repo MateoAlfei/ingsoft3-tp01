@@ -1,6 +1,7 @@
 using AppGastos.Api.Common;
 using AppGastos.Api.Data;
 using AppGastos.Api.Dtos;
+using AppGastos.Api.Logica;
 using AppGastos.Api.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -30,15 +31,12 @@ public class ExpenseService
             .ToListAsync();
     }
 
-    public async Task<ExpenseResponse> CreateAsync(Guid userId, CreateExpenseRequest request)
+        public async Task<ExpenseResponse> CreateAsync(Guid userId, CreateExpenseRequest request)
     {
-        if (request.Amount <= 0)
-            throw new ValidationException("El monto debe ser mayor a 0.");
-
-        if (request.Date > DateOnly.FromDateTime(DateTime.UtcNow))
-            throw new ValidationException("La fecha no puede ser futura.");
+        GastoValidator.Validar(request.Amount, request.Date, DateOnly.FromDateTime(DateTime.UtcNow));
 
         var category = await _db.Categories
+        
             .SingleOrDefaultAsync(c => c.Id == request.CategoryId && c.UserId == userId);
 
         if (category is null)
