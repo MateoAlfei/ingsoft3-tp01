@@ -5,6 +5,8 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AppGastos.Api", "AppGastos.Api\AppGastos.Api.csproj", "{3C551E1F-7828-4DDD-955D-5E58A4E6E3C0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AppGastos.Api.Tests", "AppGastos.Api.Tests\AppGastos.Api.Tests.csproj", "{63E599E0-3390-4B5E-9919-678024E9CD52}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +20,9 @@ Global
 		{3C551E1F-7828-4DDD-955D-5E58A4E6E3C0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3C551E1F-7828-4DDD-955D-5E58A4E6E3C0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3C551E1F-7828-4DDD-955D-5E58A4E6E3C0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{63E599E0-3390-4B5E-9919-678024E9CD52}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{63E599E0-3390-4B5E-9919-678024E9CD52}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{63E599E0-3390-4B5E-9919-678024E9CD52}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{63E599E0-3390-4B5E-9919-678024E9CD52}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
