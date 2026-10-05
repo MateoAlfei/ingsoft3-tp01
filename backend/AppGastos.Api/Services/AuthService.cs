@@ -4,6 +4,7 @@ using System.Text;
 using AppGastos.Api.Common;
 using AppGastos.Api.Data;
 using AppGastos.Api.Dtos;
+using AppGastos.Api.Logica;           
 using AppGastos.Api.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -22,18 +23,12 @@ public class AuthService
         _jwtOptions = jwtOptions.Value;
     }
 
+    // Registrar un usuario nuevo (ACÁ está el cambio)
     public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
     {
-        var email = request.Email.Trim().ToLowerInvariant();
-
-        if (string.IsNullOrWhiteSpace(email) || !email.Contains('@'))
-            throw new ValidationException("El email no es válido.");
-
-        if (string.IsNullOrWhiteSpace(request.Password) || request.Password.Length < 6)
-            throw new ValidationException("La contraseña debe tener al menos 6 caracteres.");
-
-        if (string.IsNullOrWhiteSpace(request.Name))
-            throw new ValidationException("El nombre es requerido.");
+        // Antes había una línea que normalizaba el email y tres "if".
+        // Ahora la regla vive en RegistroValidator, que devuelve el email ya normalizado.
+        var email = RegistroValidator.Validar(request.Email, request.Password, request.Name);
 
         var exists = await _db.Users.AnyAsync(u => u.Email == email);
         if (exists)
@@ -52,6 +47,7 @@ public class AuthService
         return new AuthResponse(GenerateToken(user), user.Email, user.Name);
     }
 
+    // Iniciar sesión (NO cambia)
     public async Task<AuthResponse> LoginAsync(LoginRequest request)
     {
         var email = request.Email.Trim().ToLowerInvariant();
@@ -63,6 +59,7 @@ public class AuthService
         return new AuthResponse(GenerateToken(user), user.Email, user.Name);
     }
 
+    // Generar el token JWT (NO cambia)
     private string GenerateToken(User user)
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtOptions.Secret));
