@@ -20,6 +20,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<CategoryService>();
+builder.Services.AddScoped<IGastoRepository, GastoRepositoryEf>();  
 builder.Services.AddScoped<ExpenseService>();
 builder.Services.AddScoped<DashboardService>();
 
