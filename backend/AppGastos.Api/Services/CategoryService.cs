@@ -1,6 +1,7 @@
 using AppGastos.Api.Common;
 using AppGastos.Api.Data;
 using AppGastos.Api.Dtos;
+using AppGastos.Api.Logica;           
 using AppGastos.Api.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -15,6 +16,7 @@ public class CategoryService
         _db = db;
     }
 
+    // Método 1: listar las categorías del usuario (NO cambia)
     public async Task<List<CategoryResponse>> GetAllAsync(Guid userId)
     {
         return await _db.Categories
@@ -23,18 +25,16 @@ public class CategoryService
             .ToListAsync();
     }
 
+    // Método 2: crear una categoría (ACÁ está el cambio)
     public async Task<CategoryResponse> CreateAsync(Guid userId, CreateCategoryRequest request)
     {
-        if (string.IsNullOrWhiteSpace(request.Name))
-            throw new ValidationException("El nombre de la categoría es requerido.");
-
-        if (request.MonthlyBudget is < 0)
-            throw new ValidationException("El presupuesto mensual no puede ser negativo.");
+        // Antes había dos "if" y un .Trim(). Ahora la regla vive en CategoriaValidator.
+        var nombre = CategoriaValidator.Validar(request.Name, request.MonthlyBudget);
 
         var category = new Category
         {
             UserId = userId,
-            Name = request.Name.Trim(),
+            Name = nombre,                     // ← antes era request.Name.Trim()
             MonthlyBudget = request.MonthlyBudget
         };
 
@@ -44,6 +44,7 @@ public class CategoryService
         return new CategoryResponse(category.Id, category.Name, category.MonthlyBudget, false);
     }
 
+    // Método 3: borrar una categoría (NO cambia)
     public async Task DeleteAsync(Guid userId, Guid categoryId)
     {
         var category = await _db.Categories

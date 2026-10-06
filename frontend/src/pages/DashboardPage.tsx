@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { dashboardApi } from "../api/client";
 import type { DashboardSummary } from "../api/types";
 import { PieChart } from "../components/PieChart";
+import { porcentajeUsado, resumenDelMes } from "../lib/gastos"; 
 
 const MONTH_NAMES = [
   "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -25,8 +26,9 @@ export function DashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const now = new Date();
-    dashboardApi.getSummary(now.getMonth() + 1, now.getFullYear()).then((data) => {
+    // ← CAMBIO: le pasamos la función de la API (sin paréntesis) y la fecha de hoy.
+    // resumenDelMes se encarga de calcular el mes correcto (1..12) y llamarla.
+    resumenDelMes(dashboardApi.getSummary, new Date()).then((data) => {
       setSummary(data);
       setLoading(false);
     });
@@ -61,7 +63,7 @@ export function DashboardPage() {
 
           <div className="cards-grid">
           {summary.categories.map((c) => {
-            const pct = c.monthlyBudget ? Math.min(100, (c.spent / c.monthlyBudget) * 100) : null;
+            const pct = porcentajeUsado(c.spent, c.monthlyBudget); // ← CAMBIO
             return (
               <div className="card" key={c.categoryId}>
                 <h2>{c.categoryName}</h2>

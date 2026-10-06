@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 
 // https://vite.dev/config/
@@ -10,6 +10,18 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:8080',
         changeOrigin: true,
+      },
+    },
+  },
+  test: {
+        coverage: {
+      provider: 'v8',
+      include: ['src/lib/**'],
+      exclude: ['**/*.test.ts'],
+      reporter: ['text', 'html', 'lcov', 'json-summary'],
+      thresholds: {
+        lines: 90,
+        branches: 85,
       },
     },
   },

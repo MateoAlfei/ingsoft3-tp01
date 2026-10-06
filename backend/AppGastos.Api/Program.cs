@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using AppGastos.Api.Data;
 using AppGastos.Api.Endpoints;
@@ -20,6 +21,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<CategoryService>();
+builder.Services.AddScoped<IGastoRepository, GastoRepositoryEf>();  
 builder.Services.AddScoped<ExpenseService>();
 builder.Services.AddScoped<DashboardService>();
 
@@ -66,3 +68,7 @@ app.MapExpenseEndpoints();
 app.MapDashboardEndpoints();
 
 app.Run();
+
+
+[ExcludeFromCodeCoverage]
+public partial class Program { }
