@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { ApiError, categoriesApi, expensesApi } from "../api/client";
 import type { Category, Expense } from "../api/types";
+import { esGastoValido, totalGastado } from "../lib/gastos"; 
 
 function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
@@ -38,10 +39,10 @@ export function ExpensesPage() {
   }, [categories, categoryId]);
 
   // Regla de frontend: el total se recalcula solo, sin recargar la página.
-  const total = useMemo(() => expenses.reduce((sum, e) => sum + e.amount, 0), [expenses]);
+  const total = useMemo(() => totalGastado(expenses), [expenses]); // ← CAMBIO
 
   // Regla de frontend: no se puede enviar el formulario con datos inválidos.
-  const isValid = categoryId !== "" && Number(amount) > 0 && date !== "" && date <= todayIso();
+  const isValid = esGastoValido({ categoryId, amount, date }, todayIso()); // ← CAMBIO
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
