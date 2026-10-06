@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using AppGastos.Api.Data;
 using AppGastos.Api.Endpoints;
@@ -67,3 +68,7 @@ app.MapExpenseEndpoints();
 app.MapDashboardEndpoints();
 
 app.Run();
+
+
+[ExcludeFromCodeCoverage]
+public partial class Program { }

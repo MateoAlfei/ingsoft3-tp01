@@ -15,8 +15,14 @@ RUN dotnet publish AppGastos.Api/AppGastos.Api.csproj -c Release -o /app/publish
 FROM build AS test
 ENTRYPOINT ["dotnet", "test", "AppGastos.sln", \
             "--logger", "trx;LogFileName=tests.trx", \
-            "--results-directory", "/out"]
-
+            "--results-directory", "/out", \
+            "/p:CollectCoverage=true", \
+            "/p:Include=[AppGastos.Api]*", \
+            "/p:Exclude=[AppGastos.Api]AppGastos.Api.Migrations.*%2c[AppGastos.Api]AppGastos.Api.Models.*%2c[AppGastos.Api]AppGastos.Api.Dtos.*%2c[AppGastos.Api]AppGastos.Api.Data.*%2c[AppGastos.Api]AppGastos.Api.Endpoints.*", \
+            "/p:CoverletOutputFormat=cobertura", \
+            "/p:CoverletOutput=/out/", \
+            "/p:Threshold=25%2c40", \
+            "/p:ThresholdType=line%2cbranch"]
 # ---- Etapa 3: runtime (imagen mínima, sin SDK ni tests) ----
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
