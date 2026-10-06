@@ -44,13 +44,13 @@ jobs:
       - name: Correr los tests con coverage
         run: |
           mkdir -p TestResults
-          docker run --rm -v "${{ github.workspace }}/TestResults:/out" backend-test:ci --collect:"XPlat Code Coverage"
+          docker run --rm -v "${{ github.workspace }}/TestResults:/out" backend-test:ci
 
       - name: Reporte de coverage
         if: ${{ !cancelled() }}
         run: |
           dotnet tool install -g dotnet-reportgenerator-globaltool
-          reportgenerator -reports:"TestResults/*/coverage.cobertura.xml" -sourcedirs:backend -targetdir:coveragereport "-reporttypes:Html;MarkdownSummaryGithub"
+          reportgenerator -reports:"TestResults/coverage.cobertura.xml" -sourcedirs:backend -targetdir:coveragereport "-reporttypes:Html;MarkdownSummaryGithub"
           cat coveragereport/SummaryGithub.md >> $GITHUB_STEP_SUMMARY
 
       - name: Subir el reporte como artifact

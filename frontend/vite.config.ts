@@ -14,11 +14,15 @@ export default defineConfig({
     },
   },
   test: {
-    coverage: {
+        coverage: {
       provider: 'v8',
       include: ['src/lib/**'],
       exclude: ['**/*.test.ts'],
       reporter: ['text', 'html', 'lcov', 'json-summary'],
+      thresholds: {
+        lines: 90,
+        branches: 85,
+      },
     },
   },
 })
