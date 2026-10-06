@@ -280,3 +280,63 @@ de subirlo (`docker build ./backend`), vi los checks en rojo y el botón de merg
 PR, y confirmé el merge habilitado recién después del fix. Puedo explicar en la defensa oral el
 porqué de cada decisión (paralelismo de jobs, scope del cache, strict: true, por qué el pipeline
 usa el Dockerfile) sin depender de la IA.
+
+
+
+---
+
+## TP5 — Testing, coverage y quality gate
+
+### Ejercicio del camino sin cubrir
+
+En el reporte de cobertura, la línea 14 de `RegistroValidator.cs` (`email?.Trim().ToLowerInvariant()`) aparecía en naranja. El `?.` tiene dos caminos (email null o no) y ningún test probaba el caso null.
+
+La entrada que la recorre es `Validar(null, "secreta", "mateo")`. Decidí agregar ese caso al `[Theory]` de `EmailInvalido_EsRechazado`, porque ese `?.` es justo lo que evita que un email vacío rompa el registro, y si alguien lo saca no me entero. Después de agregarlo la línea quedó en verde.
+
+### Qué se testea y por qué
+
+Saqué las reglas del negocio de los services a una carpeta `Logica` (validar gasto, categoría, registro y presupuesto restante) y a `src/lib` en el frontend. Son funciones puras: sin base ni red, así que se testean rápido y sin sorpresas. Los services quedaron como orquestadores.
+
+Para poder usar un mock tuve que hacer que `ExpenseService` dependa de una interfaz (`IGastoRepository`) y no directo de EF. Sin eso no había forma de probarlo sin una base real.
+
+### Tests
+
+Backend: 26 tests (xUnit + Moq), con casos parametrizados, casos de error y uno con mock: verifica que el gasto se guarda una sola vez, y que con un monto inválido nunca toca la base. Frontend: 22 tests (vitest) con los mismos tres tipos.
+
+Las fechas van fijas y `hoy` entra por parámetro, así los tests no dependen del día en que corran.
+
+### Qué mido y qué no
+
+Excluyo de la cobertura: Migrations (las genera EF), Models y Dtos (solo propiedades), Data (adaptador de EF, se probaría con una base real), Endpoints (cableado HTTP) y Program. Los Services sí los dejo contando, aunque bajan el número, porque tienen lógica real. En el frontend solo mido `src/lib`.
+
+### Umbrales
+
+Los saqué de lo que medí, no de un número lindo.
+
+- **Backend:** medí 26,9% de líneas y 43,3% de ramas, y puse 25% y 40%. Un poco menos que lo medido, para que no falle por redondeos pero que una función nueva sin tests sí lo rompa.
+- **Frontend:** medí 100% y puse 90% de líneas y 85% de ramas, porque `lib` es lógica pura y no hay excusa para no testearla.
+
+Es un piso, y la idea es subirlo cuando agregue tests a los Services. `AuthService`, `CategoryService` y `DashboardService` siguen casi sin tests: esa es una deuda que sé que tengo.
+
+### Cobertura no es calidad
+
+Probé a mano cambiar `<=` por `<` en el validador del monto y falló el test del monto 0. Sin ese caso, la línea igual figuraba como cubierta. También se puede tener 100% llamando una función sin chequear qué devuelve. Por eso agregué casos de borde y no solo "que pase por la línea".
+
+Además, un umbral se puede inflar excluyendo código (ley de Goodhart). Por eso cada exclusión de arriba tiene su razón y los Services no los saqué.
+
+### Prueba de que frena
+
+- **PR rojo → arreglado → mergeado:** [(https://github.com/MateoAlfei/ingsoft3-tp01/pull/24)]. Primer commit con una función nueva sin tests: el frontend quedó en 45,45% de líneas y 75% de ramas, bajo los umbrales de 90 y 85, y el merge quedó bloqueado. Segundo commit con los tests: verde y mergeado. Run rojo: [https://github.com/MateoAlfei/ingsoft3-tp01/actions/runs/37414308139/job/112109418220].
+  - **PR que queda abierto y rojo a propósito:** [https://github.com/MateoAlfei/ingsoft3-tp01/pull/25]. Código nuevo en `Logica` sin tests, el backend baja del umbral y el check requerido falla.
+
+### Pipeline
+
+Los tests corren dentro de Docker (un stage `test` en cada Dockerfile), así que son los mismos en mi máquina y en el CI. El reporte queda en el Summary del run y como artifact descargable (`coverage-backend` y `coverage-frontend`). `build-backend` y `build-frontend` son checks requeridos en `main`.
+
+### Uso de IA
+
+Usé Claude como guía paso a paso: me explicaba qué hacer y por qué, y me daba comandos y código base. Yo lo ejecuté en mi máquina, probé los resultados, rompí el código a mano para ver que los tests lo detectaran, y decidí los umbrales y las exclusiones.
+
+### Entrega
+
+Tag `v5.0.0` y release:
