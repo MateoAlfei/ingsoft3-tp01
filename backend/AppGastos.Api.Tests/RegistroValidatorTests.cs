@@ -6,14 +6,15 @@ namespace AppGastos.Api.Tests;
 
 public class RegistroValidatorTests
 {
-    // Regla 1: el email tiene que existir y tener @.
+       // Regla 1: el email tiene que existir y tener @.
     [Theory]
     [InlineData("")]                    // vacío
     [InlineData("mateo.gmail.com")]   // sin @
-    public void EmailInvalido_EsRechazado(string email)
+    [InlineData(null)]                  // no vino el campo (recorre la rama del "?.")
+    public void EmailInvalido_EsRechazado(string? email)
     {
         var ex = Assert.Throws<ValidationException>(
-            () => RegistroValidator.Validar(email, "secreta", ""));
+            () => RegistroValidator.Validar(email, "secreta", "mateo"));
 
         Assert.Contains("email", ex.Message);
     }
