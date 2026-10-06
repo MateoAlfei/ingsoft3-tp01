@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { DashboardSummary } from "../api/types";
 import {
+  proyeccionFinDeMes,
   esGastoValido,
   porcentajeUsado,
   resumenDelMes,
@@ -88,3 +89,28 @@ describe("resumenDelMes", () => {
     expect(obtener).toHaveBeenCalledWith(1, 2026);
   });
 });
+describe('proyeccionFinDeMes', () => {
+  it('sin gastos la proyección es 0', () => {
+    expect(proyeccionFinDeMes(0, new Date(2026, 9, 10))).toBe(0)
+  })
+
+  it('un monto negativo también da 0', () => {
+    expect(proyeccionFinDeMes(-50, new Date(2026, 9, 10))).toBe(0)
+  })
+
+    it.each([
+    ['octubre (31 días)', 1000, 3100, new Date(2026, 9, 10)],
+    ['septiembre (30 días)', 1500, 3000, new Date(2026, 8, 15)],
+    ['febrero 2026 (28 días)', 280, 560, new Date(2026, 1, 14)],
+  ])('%s: gastado %d proyecta %d', (_mes, gastado, esperado, hoy) => {
+    expect(proyeccionFinDeMes(gastado, hoy)).toBe(esperado)
+  })
+
+  it('el último día del mes la proyección es lo ya gastado (borde)', () => {
+    expect(proyeccionFinDeMes(900, new Date(2026, 9, 31))).toBe(900)
+  })
+
+  it('redondea a 2 decimales', () => {
+    expect(proyeccionFinDeMes(100, new Date(2026, 9, 3))).toBe(1033.33)
+  })
+})
