@@ -42,3 +42,12 @@ export function resumenDelMes(obtener: ObtenerResumen, hoy: Date): Promise<Dashb
   // getMonth() devuelve 0..11 (enero = 0), pero la API espera 1..12 (enero = 1)
   return obtener(hoy.getMonth() + 1, hoy.getFullYear());
 }
+export function proyeccionFinDeMes(gastado: number, hoy: Date): number {
+  if (gastado <= 0) {
+    return 0
+  }
+  const diaActual = hoy.getDate()
+  const diasDelMes = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0).getDate()
+  const promedioDiario = gastado / diaActual
+  return Math.round(promedioDiario * diasDelMes * 100) / 100
+}
