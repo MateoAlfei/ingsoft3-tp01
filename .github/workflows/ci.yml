@@ -84,3 +84,32 @@ jobs:
           tags: frontend:ci
           cache-from: type=gha,scope=frontend
           cache-to: type=gha,mode=max,scope=frontend
+
+      - name: Construir la etapa de tests del frontend
+        uses: docker/build-push-action@v7
+        with:
+          context: ./frontend
+          target: test
+          load: true
+          push: false
+          tags: frontend-test:ci
+          cache-from: type=gha,scope=frontend-test
+          cache-to: type=gha,mode=max,scope=frontend-test
+
+      - name: Correr los tests con coverage
+        run: |
+          mkdir -p coverage-frontend
+          docker run --rm -v "${{ github.workspace }}/coverage-frontend:/salida" frontend-test:ci --coverage.reportsDirectory=/salida/reporte
+
+      - name: Resumen de coverage del frontend
+        if: ${{ !cancelled() }}
+        run: |
+          test -f coverage-frontend/reporte/coverage-summary.json
+          jq -r '"### Coverage del frontend\n\n| Métrica | % |\n|---|---|\n| Líneas | \(.total.lines.pct) |\n| Ramas | \(.total.branches.pct) |\n| Funciones | \(.total.functions.pct) |\n| Statements | \(.total.statements.pct) |"' coverage-frontend/reporte/coverage-summary.json >> $GITHUB_STEP_SUMMARY
+
+      - name: Subir el reporte como artifact
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v6
+        with:
+          name: coverage-frontend
+          path: coverage-frontend/reporte
