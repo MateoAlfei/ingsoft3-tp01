@@ -61,6 +61,11 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapGet("/api/health", () => Results.Ok(new { status = "ok" }));
+app.MapGet("/api/health/db", async (AppDbContext db) =>
+{
+    await db.Users.AnyAsync();
+    return Results.Ok(new { status = "ok" });
+});
 
 app.MapAuthEndpoints();
 app.MapCategoryEndpoints();
