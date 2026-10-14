@@ -134,4 +134,36 @@ jobs:
           push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
           tags: ghcr.io/mateoalfei/ingsoft3-tp01-frontend:sha-${{ github.sha }}
           cache-from: type=gha,scope=frontend
-          cache-to: type=gha,mode=max,scope=frontend
+          cache-to: type=gha,mode=max,scope=
+  deploy-qa:
+    needs: [build-backend, build-frontend]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: qa
+    permissions: {}
+    env:
+      API_URL: https://appgastos-api-qa.onrender.com
+      FRONT_URL: https://appgastos-front-qa.onrender.com
+    steps:
+      - name: Pedir deploy del commit verificado
+        env:
+          HOOK_API: ${{ secrets.RENDER_HOOK_API_QA }}
+          HOOK_FRONT: ${{ secrets.RENDER_HOOK_FRONT_QA }}
+        run: |
+          curl -fsS -o /dev/null "${HOOK_API}&ref=${GITHUB_SHA}"
+          curl -fsS -o /dev/null "${HOOK_FRONT}&ref=${GITHUB_SHA}"
+
+      - name: Smoke test de QA (con reintentos)
+        run: |
+          for i in $(seq 1 30); do
+            if curl -fsS --max-time 10 "$API_URL/api/health/db" > /dev/null \
+              && curl -fsS --max-time 10 "$FRONT_URL/" > /dev/null \
+              && curl -fsS --max-time 10 "$FRONT_URL/api/health" > /dev/null; then
+              echo "QA responde OK"
+              exit 0
+            fi
+            echo "Intento $i falló, reintento en 20s"
+            sleep 20
+          done
+          echo "El smoke test de QA falló"
+          exit 1
