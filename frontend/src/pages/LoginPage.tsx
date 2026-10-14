@@ -35,6 +35,7 @@ export function LoginPage() {
     <div className="auth-page">
       <form className="card auth-form" onSubmit={handleSubmit}>
         <h1>AppGastos</h1>
+        <p>Versión 6 · desplegada con pipeline</p>
         <div className="tabs">
           <button
             type="button"
