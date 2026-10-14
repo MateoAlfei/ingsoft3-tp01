@@ -177,8 +177,8 @@ jobs:
       cancel-in-progress: false
     permissions: {}
     env:
-      API_URL: <URL-API-PROD>
-      FRONT_URL: <URL-FRONT-PROD>
+      API_URL: https://appgastos-api-prod.onrender.com
+      FRONT_URL: https://appgastos-front-prod.onrender.com
     steps:
       - name: Pedir deploy del commit verificado en QA
         env:
