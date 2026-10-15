@@ -340,3 +340,44 @@ Usé Claude como guía paso a paso: me explicaba qué hacer y por qué, y me dab
 ### Entrega
 
 Tag `v5.0.0` y release:
+
+## TP6 — Entrega continua: ambientes, aprobaciones y despliegue
+
+### Enlaces de este TP
+
+- Paquete backend: https://github.com/MateoAlfei/ingsoft3-tp01/pkgs/container/ingsoft3-tp01-backend/1387408448?tag=sha-20bb73e309777e856f7c3934b0eb70af72387b31
+- Paquete frontend: https://github.com/MateoAlfei/ingsoft3-tp01/pkgs/container/ingsoft3-tp01-frontend/1387404999?tag=sha-20bb73e309777e856f7c3934b0eb70af72387b31
+- Cadena completa en verde (run #41): https://github.com/MateoAlfei/ingsoft3-tp01/actions/runs/38627134826
+- Cadena con rechazo (run #39): https://github.com/MateoAlfei/ingsoft3-tp01/actions/runs/38620419988
+- Release v6.0.0 (commit 20bb73e): https://github.com/MateoAlfei/ingsoft3-tp01/releases/tag/v6.0.0
+- QA: https://appgastos-front-qa.onrender.com · https://appgastos-api-qa.onrender.com
+- PROD: https://appgastos-front-prod.onrender.com · https://appgastos-api-prod.onrender.com
+
+### Decisiones
+
+**Imagen solo si todo está verde.** Se publica al final, solo desde `main` y con tests pasados. Si existe una imagen con un commit, ese commit estaba bien.
+
+**Entrega vs. despliegue continuo.** En entrega continua cada cambio queda listo y una persona decide si sale; en despliegue continuo sale solo. Acá es entrega: QA es automático, PROD espera aprobación.
+
+**La cadena.** Construir y probar → QA → PROD. `needs` hace que cada paso espere al anterior. `if` limita QA y PROD a `main`, así un PR no llega a ningún ambiente. `environment` activa las reglas de cada ambiente, y los secretos de QA no los ve PROD. Cada ambiente tiene su propia base de datos.
+
+**Cuándo apruebo.** Que QA esté verde con el mismo commit, que el cambio sea el esperado y que no haya otro deploy en curso. Rechazo (run #39): "Rechazo: este cambio es solo del pipeline y no aporta nada visible a producción. No hay motivo para desplegarlo en PROD hasta que se junte con un cambio de la app que sí lo necesite."
+
+**Plan gratis de Render.** Se duerme a los 15 minutos (la primera visita tarda 50 s o más), tiene 750 horas y 500 minutos de build por mes, y los builds son lentos y variables. Por eso el smoke test reintenta.
+
+**Garantía que se pierde.** Render reconstruye el código desde el repo en vez de usar la imagen probada. Lo que corre es parecido, no idéntico, a lo que se probó.
+
+**Smoke test.** Prueba que el back responde y llega a su base, y que el front está arriba. No prueba que la funcionalidad nueva ande ni que sea la versión nueva (puede pasar contra la vieja mientras Render construye).
+
+**Patrón y rollback.** Render mantiene la versión vieja hasta que la nueva responde. Para volver atrás: Deploys → Rollback. Tardó unos 15 segundos hasta que PROD respondió. Límite: Render no me dejó volver a la versión más vieja (`deca50b`), así que volví al mismo commit; eso mide el mecanismo, no un cambio real de código. Además, vuelve el código, no los datos.
+
+### Problemas
+
+- **Puerto:** Render no detectaba el puerto; definí `PORT` en cada servicio.
+- **Aprobación equivocada:** aprobé sin querer el primer gate; repetí el flujo para la evidencia del rechazo.
+- **Llave de deploy equivocada:** el secreto de PROD apuntaba a otro servicio; lo volví a copiar.
+- **Deploy trabado:** un build quedó 45 minutos sin logs porque Render tenía una caída general; esperé a que se resolviera.
+
+### Uso de IA
+
+Usé Claude como guía paso a paso y para diagnosticar errores. Yo ejecuté los comandos, cargué los secretos, decidí aprobar o rechazar y revisé los resultados.
