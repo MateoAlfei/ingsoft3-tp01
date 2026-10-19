@@ -51,7 +51,7 @@ test('cargar un gasto lo muestra en la tabla, y eliminarlo lo saca', async ({ pa
 
 test('con una contraseña incorrecta el usuario ve el error y no entra', async ({ page }) => {
   await iniciarSesion(page, 'incorrecta123')
-  await expect(page.getByRole('alert')).toContainText('incorrectos') // el usuario ve el error…
+  await expect(page.getByRole('alert')).toContainText('401') // el usuario ve el error…
   await expect(page).toHaveURL(/\/login/) // …y no entró
   await expect(page.getByRole('link', { name: 'Gastos', exact: true })).toHaveCount(0)
 })
