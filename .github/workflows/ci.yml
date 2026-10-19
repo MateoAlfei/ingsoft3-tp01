@@ -169,8 +169,79 @@ jobs:
           done
           echo "El smoke test de QA falló"
           exit 1
+  integracion:
+    needs: deploy-qa                       # QA ya está ejecutando la imagen de ESTA corrida
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install (sin browser)
+        run: npm ci
+        working-directory: ./frontend
+
+      - name: Integración contra la api de QA
+        env:
+          API_BASE_URL: https://appgastos-api-qa.onrender.com
+        run: npx playwright test e2e/api.spec.js
+        working-directory: ./frontend
+
+      - name: Publicar reporte de integración
+        uses: actions/upload-artifact@v6
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report-integracion
+          path: frontend/playwright-report
+          retention-days: 7
+
+  e2e:
+    needs: integracion                     # si la api está rota, no gastamos un browser en confirmarlo
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install + browser
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+        working-directory: ./frontend
+
+      - name: e2e contra QA
+        env:
+          E2E_BASE_URL: https://appgastos-front-qa.onrender.com
+          API_BASE_URL: https://appgastos-api-qa.onrender.com   # solo para preparar datos (categoría) por la api
+        run: npx playwright test e2e/gastos.spec.js
+        working-directory: ./frontend
+
+      - name: Publicar reporte e2e
+        uses: actions/upload-artifact@v6
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report-e2e
+          path: frontend/playwright-report
+          retention-days: 7
+
   deploy-prod:
-    needs: deploy-qa
+    needs: e2e                             # EL gate: sin e2e verde, ni se pide aprobación
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment: production

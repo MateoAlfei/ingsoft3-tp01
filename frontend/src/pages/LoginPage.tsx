@@ -79,7 +79,7 @@ export function LoginPage() {
           />
         </label>
 
-        {error && <p className="error">{error}</p>}
+        {error && <p className="error" role="alert">{error}</p>}
 
         <button type="submit" disabled={loading}>
           {loading ? "Espere..." : mode === "login" ? "Ingresar" : "Crear cuenta"}
