@@ -118,7 +118,7 @@ export function ExpensesPage() {
           />
         </label>
         <button type="submit" disabled={!isValid}>
-          Agregar gasto
+          Guardar gasto
         </button>
       </form>
 
