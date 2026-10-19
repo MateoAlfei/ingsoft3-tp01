@@ -19,3 +19,7 @@ Thumbs.db
 coveragereport/
 TestResults/
 coverage/
+
+# Playwright: reportes generados en cada corrida
+playwright-report/
+test-results/
