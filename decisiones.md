@@ -381,3 +381,58 @@ Tag `v5.0.0` y release:
 ### Uso de IA
 
 Usé Claude como guía paso a paso y para diagnosticar errores. Yo ejecuté los comandos, cargué los secretos, decidí aprobar o rechazar y revisé los resultados.
+
+---
+
+## TP7 — Contenedores en el pipeline, integración y e2e
+
+### Enlaces de este TP
+
+- Paquete backend (`sha-a9c04f5…`): https://github.com/MateoAlfei/ingsoft3-tp01/pkgs/container/ingsoft3-tp01-backend/1411767539?tag=sha-a9c04f54fba5fd24cd88e1e8e1f7591d669495d2
+- Paquete frontend (`sha-a9c04f5…`): https://github.com/MateoAlfei/ingsoft3-tp01/pkgs/container/ingsoft3-tp01-frontend/1411766304?tag=sha-a9c04f54fba5fd24cd88e1e8e1f7591d669495d2
+- Commit que rompió el front (botón renombrado a "Guardar gasto", PR #38): a2c6559
+- Corrida en rojo (integración verde, e2e rojo, PROD sin aprobación): https://github.com/MateoAlfei/ingsoft3-tp01/actions/runs/39316996315
+  - Reporte e2e (rojo): artefacto `playwright-report-e2e` de esa corrida
+  - Reporte integración (verde): artefacto `playwright-report-integracion` de esa corrida
+- Corrida en verde completa (QA → integración → e2e → aprobación → PROD): https://github.com/MateoAlfei/ingsoft3-tp01/actions/runs/39321271967
+- Release v7.0.0 (commit a9c04f5, el que está en PROD): https://github.com/MateoAlfei/ingsoft3-tp01/releases/tag/v7.0.0
+- QA: https://appgastos-front-qa.onrender.com · https://appgastos-api-qa.onrender.com
+- PROD: https://appgastos-front-prod.onrender.com · https://appgastos-api-prod.onrender.com
+
+
+### Decisiones
+
+**Construir una vez, desplegar muchas.** La imagen se construye una sola vez, en el job de build. Esa misma imagen se despliega en QA, se prueba, y esa misma imagen va a PROD. Ejemplo: en la corrida #39 se construyó `sha-a9c04f5`; QA la ejecutó, pasaron integración y e2e, y después de aprobar PROD recibió esa misma imagen, sin reconstruir. En el TP6 Render reconstruía el código en cada ambiente y se perdía esa garantía; ahora lo que se probó es lo que corre.
+
+**Estrategia de tags.** Cada imagen lleva el tag. Es único e inmutable: identifica el código exacto. No uso `latest` porque cambia con cada build, así que no se sabría qué corre ni a qué versión volver. Solo se publica desde `main`.
+
+**Del tag a la imagen.** Del commit se llega al tag, el tag lleva al paquete, y el release `v7.0.0` apunta al mismo commit.
+
+**Imagen configurada en Render ≠ imagen que corre.** En Settings, la imagen es solo un punto de partida. En cada deploy el pipeline le pasa por el hook la imagen del commit (`imgURL`), así que Settings puede mostrar una imagen vieja mientras corre la nueva.
+
+**Cómo verifico desde afuera qué corre.** En Render → Events del servicio aparece "Triggered via Deploy Hook" con el sha del run. Compruebo que ese sha coincide con el commit del release (`git rev-parse v7.0.0`) y con *Deployments* de GitHub. El smoke test no prueba esto: solo dice que el servicio responde, y puede pasar contra la versión vieja mientras la nueva arranca.
+
+**Flujos e2e elegidos (3).**
+1. Cargar un gasto: aparece en la tabla, y eliminarlo lo saca.
+2. Un gasto cargado sigue ahí después de recargar la página (persistencia).
+3. Con contraseña incorrecta el usuario ve el error y no entra.
+
+Los elegí porque son lo que más duele si se rompe (entrar, guardar, no perder datos) y cada uno atraviesa front, API y base.
+
+**Integración vs. e2e.** Integración le pega directo a la API de QA, sin navegador (3 pruebas: alta y borrado de un gasto, monto 0 rechazado, sin token no devuelve nada). e2e abre el navegador y usa la pantalla como un usuario.
+
+**Por qué la integración es amplia.** Va directo a la API real con base real, así que cubre autenticación, validación y persistencia en pocos segundos (14 s contra 4 min 46 s de la e2e) y, cuando falla, señala dónde mirar.
+
+**Arranque en frío y tests intermitentes.** QA se duerme y despierta en 50 s o más, y mientras despierta devuelve 502. Puse timeouts de 60 s y un solo reintento. Más reintentos podrían esconder un fallo real (un test "flaky" que a veces pasa).
+
+**Mismo front en QA y PROD.** La URL del backend es una variable de entorno que se lee al arrancar, no está dentro de la imagen. Por eso la misma imagen sirve en los dos ambientes.
+
+**Límite conocido: un solo QA compartido.** Los tests escriben en la base de QA. Si dos corridas coinciden, o alguien usa QA a la vez, se pueden pisar. Mis tests crean su propio usuario y borran lo que cargan, pero no es aislamiento real. Una solución sería un ambiente efímero por corrida.
+
+### Problemas
+
+- **502 al pasar los servicios a imagen:** el login daba 502; esperé a que los servicios despertaran y volvió a funcionar.
+
+### Uso de IA
+
+Usé Claude como guía paso a paso y para diagnosticar errores. Yo ejecuté los comandos, tomé las decisiones (romper el front, aprobar o no, crear el release) y revisé los resultados.
