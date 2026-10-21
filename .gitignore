@@ -23,3 +23,9 @@ coverage/
 # Playwright: reportes generados en cada corrida
 playwright-report/
 test-results/
+
+# Terraform: el estado tiene secretos en texto plano, NUNCA se versiona
+*.tfstate
+*.tfstate.*
+.terraform/
+*.tfvars
