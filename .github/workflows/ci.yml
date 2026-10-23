@@ -49,7 +49,7 @@ jobs:
 
       - name: Subir el reporte como artifact
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-backend
           path: |
@@ -114,7 +114,7 @@ jobs:
 
       - name: Subir el reporte como artifact
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-frontend
           path: coverage-frontend/reporte
@@ -196,7 +196,7 @@ jobs:
         working-directory: ./frontend
 
       - name: Publicar reporte de integración
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
           name: playwright-report-integracion
@@ -233,7 +233,7 @@ jobs:
         working-directory: ./frontend
 
       - name: Publicar reporte e2e
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
           name: playwright-report-e2e
