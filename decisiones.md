@@ -436,3 +436,27 @@ Los elegí porque son lo que más duele si se rompe (entrar, guardar, no perder 
 ### Uso de IA
 
 Usé Claude como guía paso a paso y para diagnosticar errores. Yo ejecuté los comandos, tomé las decisiones (romper el front, aprobar o no, crear el release) y revisé los resultados.
+
+
+---
+
+## TP8 — Infraestructura como Código
+
+### Enlaces de este TP
+
+- Release v8.0.0 (commit 3505fde, el que deja `infra/` terminado): https://github.com/MateoAlfei/ingsoft3-tp01/releases/tag/v8.0.0
+- Carpeta `infra/` en `main`: https://github.com/MateoAlfei/ingsoft3-tp01/tree/main/infra
+
+### Riel y versiones
+
+Usé Terraform con Neon y Render (las cuentas del TP6). Terraform 1.16.6; providers fijados: `kislerdm/neon` 0.18.0 y `render-oss/render` 1.9.1. El `.terraform.lock.hcl` está en el repo; el estado no, porque tiene contraseñas en texto plano.
+
+Declaré un entorno nuevo, `preprod` (una base en Neon y dos servicios en Render con la imagen del TP7). No toqué QA ni producción. Las claves las leen los providers del entorno, y la cadena de conexión y la URL del backend se derivan, no se copian. Destruyo preprod al terminar de usarlo porque las 750 horas gratis de Render se comparten entre mis 6 servicios y, si me paso, suspende producción.
+
+### Problemas
+
+- **Región de Neon distinta al recrear:** no la declaré y cayó en otra. Funciona igual; para que sea idéntica habría que fijarla.
+
+### Uso de IA
+
+Usé Claude como guía y para escribir el HCL. Lo verifiqué leyendo cada `plan` antes del `apply`, probando `/api/health` y `/api/health/db`, y mirando en Neon y Render que se creaba y borraba lo esperado y que QA y producción seguían intactos.
