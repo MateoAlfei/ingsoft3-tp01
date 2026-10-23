@@ -43,6 +43,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
+builder.WebHost.UseSentry(o =>
+{
+    o.Dsn = builder.Configuration["SENTRY_DSN"] ?? "";   // llega por el entorno; sin DSN, Sentry queda apagado
+    o.TracesSampleRate = 1.0;                            // medir todos los pedidos
+});
+
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
@@ -60,7 +66,7 @@ if (app.Environment.IsDevelopment())
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapGet("/api/health", () => Results.Ok(new { status = "ok" }));
+app.MapMethods("/api/health", new[] { "GET", "HEAD" }, () => Results.Ok(new { status = "ok" }));
 app.MapGet("/api/health/db", async (AppDbContext db) =>
 {
     await db.Users.AnyAsync();
