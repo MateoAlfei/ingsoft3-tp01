@@ -73,6 +73,9 @@ app.MapGet("/api/health/db", async (AppDbContext db) =>
     return Results.Ok(new { status = "ok" });
 });
 
+// TEMPORAL (TP9): endpoint que falla a proposito para ver un error en Sentry. Se saca despues.
+app.MapGet("/api/falla", string () => throw new InvalidOperationException("Falla de prueba del TP9"));
+
 app.MapAuthEndpoints();
 app.MapCategoryEndpoints();
 app.MapExpenseEndpoints();
