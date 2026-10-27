@@ -460,3 +460,47 @@ Declaré un entorno nuevo, `preprod` (una base en Neon y dos servicios en Render
 ### Uso de IA
 
 Usé Claude como guía y para escribir el HCL. Lo verifiqué leyendo cada `plan` antes del `apply`, probando `/api/health` y `/api/health/db`, y mirando en Neon y Render que se creaba y borraba lo esperado y que QA y producción seguían intactos.
+
+## TP9 — DevSecOps, observabilidad y feedback continuo
+
+### Enlaces de este TP
+
+- Release v9.0.0 (commit que está en PROD): https://github.com/MateoAlfei/ingsoft3-tp01/releases/tag/v9.0.0
+- PR de Dependabot (#49, react-router-dom 7.18.2 → 7.18.4): https://github.com/MateoAlfei/ingsoft3-tp01/pull/49
+- PR de Sentry (#59) y su corrida en verde: https://github.com/MateoAlfei/ingsoft3-tp01/actions/runs/40009753241
+- Pestaña Security (alertas, CodeQL, secret scanning): https://github.com/MateoAlfei/ingsoft3-tp01/security
+- Tarjeta #62 del tablero del TP3 (nació de un dato de Sentry): https://github.com/MateoAlfei/ingsoft3-tp01/issues/62
+- Sentry: https://appgastos.sentry.io (proyectos `appgastos-api` y `appgastos-front`)
+- PROD: https://appgastos-front-prod.onrender.com · https://appgastos-api-prod.onrender.com
+
+### Seguridad (DevSecOps)
+
+**Dependabot.** Vigila NuGet (`/backend`), npm (`/frontend`) y GitHub Actions, una vez por semana. También activé las alertas y las security updates.
+
+**CodeQL** (análisis estático) corre con la configuración por defecto y ya hizo su primer análisis. **Push protection** está activa: GitHub bloquea el push si detecta una clave. La idea es *shift-left*: encontrar el problema lo más cerca posible de cuando se escribe el código.
+
+### Observabilidad
+
+**Monitor externo (UptimeRobot).** Chequea `/api/health` de PROD cada 5 minutos. Para provocar la caída suspendí el servicio a las 12:02; el mail de DOWN llegó a las 12:04 (**2 minutos**) y el de UP a las 12:08, después de reactivarlo.
+
+**Sentry** está en el back (`SENTRY_DSN` como variable de entorno en Render, no en el repo) y en el front (el DSN del front es público por diseño).
+
+| Operación | Dato |
+|---|---|
+| Más usada | Empate con 7 pedidos en 14 días: `POST /api/expenses` y `GET /api/categories`|
+| Más lenta | `GET /api/categories`, P95 3,39 s (P50 47 ms) |
+
+La lentitud es el arranque en frío de Render, no una consulta pesada: el P50 es de 47 ms.
+
+### Feedback continuo
+
+Del dato "GET /api/categories tiene P95 de 3,39 s" salió la tarjeta #62 en el tablero del TP3. Así la observación de PROD vuelve al backlog y no queda solo en un dashboard.
+
+### Problemas
+
+- **DSN con comillas:** el backend no mandaba datos a Sentry; la variable tenía comillas. Las saqué.
+- **Nombre de variable mal escrito:** la había creado como `SENTRY_DNS` en vez de `SENTRY_DSN`; la renombré.
+
+### Uso de IA
+
+Usé Claude como guía paso a paso y para escribir el código de Sentry. Lo verifiqué yo: mergeé los PR, aprobé el deploy a PROD, provoqué la caída y comprobé los mails de UptimeRobot, y vi los errores y las trazas en Sentry.
